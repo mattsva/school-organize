@@ -1,0 +1,18 @@
+Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+
+Copyright (c) 2025 Mattsva
+
+You are free to:
+
+- Share — copy and redistribute the material in any medium or format
+- Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+
+- Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+- NonCommercial — You may not use the material for commercial purposes.
+
+No Warranty / Liability:
+This software is provided "as-is", without any warranty of any kind. The author (Mattsva) is not liable for any damages, errors, or losses arising from the use of this software.
+
+Full license text: https://creativecommons.org/licenses/by-nc/4.0/
