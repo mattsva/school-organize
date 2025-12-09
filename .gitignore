@@ -1,14 +1,61 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.db
+*.py[cod]
+*$py.class
 
-# Virtualenv / Pipenv
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment / virtualenv
+.env
+.venv/
 env/
 venv/
-Pipfile.lock
+ENV/
+env.bak/
+venv.bak/
 
-# Environment files
-.env
+# Pipenv files (lockfile optional, if you want it in Git)
+# Pipfile.lock
+
+# VS Code / IDE settings
+.vscode/
+.idea/
+*.iml
+
+# macOS files
+.DS_Store
+
+# Logs
+*.log
+
+# Python coverage
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Frontend / build artifacts
+frontend/__pycache__/
+frontend/build/
+frontend/dist/
