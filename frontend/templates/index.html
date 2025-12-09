@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}School Timetable{% endblock %}
+
+{% block head %}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Timetable</title>
+<style>
+    :root {
+        --bg-color: #ffffff;
+        --header-bg: #0a58ca;
+        --header-text: #ffffff;
+        --time-col-bg: #dbe9ff;
+        --border-color: #c1d3ee;
+        --text-color: #1a1a1a;
+        --current-line: #0a58ca;
+    }
+
+    [data-theme="dark"] {
+        --bg-color: #000000;
+        --header-bg: #003366;
+        --header-text: #ffffff;
+        --time-col-bg: #0a2a5f;
+        --border-color: #334466;
+        --text-color: #ffffff;
+        --current-line: #3399ff;
+    }
+
+    body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: var(--bg-color);
+        color: var(--text-color);
+    }
+
+    h1 {
+        text-align: center;
+        padding: 20px 0;
+        margin: 0;
+    }
+
+    .timetable-container {
+        width: 95%;
+        margin: 0 auto 40px;
+        border-radius: 10px;
+        overflow-x: auto;
+        background: var(--bg-color);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .timetable-grid {
+        display: grid;
+        grid-template-columns: 90px repeat(6, 1fr);
+    }
+
+    .time-cell,
+    .day-cell {
+        border: 1px solid var(--border-color);
+        padding: 0;
+        position: relative;
+        min-height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+
+    .time-cell {
+        background: var(--time-col-bg);
+        font-weight: 600;
+    }
+
+    .day-header {
+        position: sticky;
+        top: 0;
+        background: var(--header-bg);
+        color: var(--header-text);
+        font-weight: 600;
+        padding: 8px 0;
+        z-index: 2;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+
+    .subject-container {
+        display: flex;
+        width: 100%;
+        height: 100%;
+    }
+
+    .subject {
+        flex: 0.5;
+        margin: 0.5px;
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 900;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 2px;
+        text-align: center;
+        cursor: pointer;
+        position: relative;
+        border: 0.5px solid black;
+        -webkit-text-stroke: 0.5px black;
+    }
+
+    .subject.current {
+        border: 2px solid var(--current-line);
+    }
+
+    .current-line {
+        position: absolute;
+        height: 2px;
+        background: var(--current-line);
+        width: 100%;
+        left: 0;
+        z-index: 5;
+    }
+
+    .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-color);
+        color: var(--text-color);
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        display: none;
+        z-index: 10;
+        min-width: 200px;
+    }
+
+    .popup h3 {
+        margin: 0 0 10px 0;
+    }
+
+    .popup p {
+        margin: 4px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<h1 id="user-name">Loading...</h1>
+
+<div class="timetable-container">
+    <div class="timetable-grid" id="timetable-grid"></div>
+</div>
+
+<div id="popup" class="popup">
+    <h3 id="popup-name"></h3>
+    <p><strong>Zeit:</strong> <span id="popup-time"></span></p>
+    <p><strong>Lehrer:</strong> <span id="popup-teacher"></span></p>
+    <p><strong>Raum:</strong> <span id="popup-room"></span></p>
+</div>
+
+<script>
+const API_BASE = "{{ api_base }}";
+
+const grid = document.getElementById('timetable-grid');
+const startHour = 7;
+const endHour = 22;
+const interval = 30;
+
+const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+const dayMap = {
+    "Mo": "monday",
+    "Di": "tuesday",
+    "Mi": "wednesday",
+    "Do": "thursday",
+    "Fr": "friday",
+    "Sa": "saturday",
+    "Su": "sunday",
+    "Monday": "monday",
+    "Tuesday": "tuesday",
+    "Wednesday": "wednesday",
+    "Thursday": "thursday",
+    "Friday": "friday",
+    "Saturday": "saturday",
+    "Sunday": "sunday"
+};
+
+document.body.dataset.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+
+grid.appendChild(Object.assign(document.createElement("div"), { className: "time-cell" }));
+days.forEach(day => {
+    const header = document.createElement("div");
+    header.className = "day-header";
+    header.textContent = day.charAt(0).toUpperCase() + day.slice(1);
+    grid.appendChild(header);
+});
+
+for (let h = startHour; h <= endHour; h++) {
+    for (let m = 0; m < 60; m += interval) {
+        if (h === endHour && m > 0) continue;
+        const timeText = `${h.toString().padStart(2,"0")}:${m.toString().padStart(2,"0")}`;
+        const timeCell = document.createElement("div");
+        timeCell.className = "time-cell";
+        timeCell.textContent = timeText;
+        grid.appendChild(timeCell);
+
+        days.forEach(day => {
+            const cell = document.createElement("div");
+            cell.className = "day-cell";
+            cell.dataset.day = day;
+            cell.dataset.time = timeText;
+
+            const container = document.createElement("div");
+            container.className = "subject-container";
+            cell.appendChild(container);
+
+            grid.appendChild(cell);
+        });
+    }
+}
+
+async function loadTimetable(userId = {{ uuid }}) {
+    try {
+        const ttRes = await fetch(`${API_BASE}/users/${userId}/timetable`);
+        if (!ttRes.ok) throw new Error("Timetable not found");
+        const timetable = await ttRes.json();
+
+        console.log("Timetable received:", timetable);
+
+        for (const apiDay in timetable) {
+            const day = dayMap[apiDay] || apiDay.toLowerCase();
+            timetable[apiDay].forEach(info => {
+                const [startTime, endTime] = info.time.split("-");
+                const startMin = toMinutes(startTime);
+                const endMin = toMinutes(endTime);
+
+                document.querySelectorAll(`.day-cell[data-day='${day}']`).forEach(cell => {
+                    const cellMin = toMinutes(cell.dataset.time);
+                    if (cellMin >= startMin && cellMin < endMin) {
+                        const subDiv = document.createElement("div");
+                        subDiv.className = "subject";
+                        subDiv.style.backgroundColor = info.color || "#3399ff";
+                        subDiv.textContent = info.name;
+
+                        subDiv.dataset.name = info.name;
+                        subDiv.dataset.start = startTime;
+                        subDiv.dataset.end = endTime;
+                        subDiv.dataset.teacher = info.teachers.join(", ");
+                        subDiv.dataset.room = info.room;
+
+                        subDiv.onclick = e => {
+                            e.stopPropagation();
+                            showPopup(subDiv);
+                        };
+
+                        cell.querySelector(".subject-container").appendChild(subDiv);
+
+                        const subjects = cell.querySelectorAll(".subject");
+                        subjects.forEach(s => s.style.flex = 1 / subjects.length);
+                    }
+                });
+            });
+        }
+    } catch (err) {
+        console.error(err);
+        document.getElementById("user-name").textContent = "Fehler beim Laden";
+    }
+}
+
+
+function toMinutes(t) {
+    const [h,m] = t.split(":").map(Number);
+    return h*60 + m;
+}
+
+const popup = document.getElementById("popup");
+function showPopup(sub) {
+    document.getElementById("popup-name").textContent = sub.dataset.name;
+    document.getElementById("popup-time").textContent = `${sub.dataset.start} - ${sub.dataset.end}`;
+    document.getElementById("popup-teacher").textContent = sub.dataset.teacher;
+    document.getElementById("popup-room").textContent = sub.dataset.room;
+    popup.style.display = "block";
+}
+document.body.addEventListener("click", () => { popup.style.display = "none"; });
+
+function highlightCurrent() {
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+    const todayIndex = now.getDay()-1;
+    if(todayIndex < 0 || todayIndex > 5) return;
+    const today = days[todayIndex];
+
+    document.querySelectorAll(".current-line").forEach(e=>e.remove());
+    document.querySelectorAll(".subject.current").forEach(e=>e.classList.remove("current"));
+
+    document.querySelectorAll(`.day-cell[data-day='${today}']`).forEach(cell => {
+        const cellMin = toMinutes(cell.dataset.time);
+        const cellEnd = cellMin + interval;
+
+        cell.querySelectorAll(".subject").forEach(sub => {
+            const subStart = toMinutes(sub.dataset.start);
+            const subEnd = toMinutes(sub.dataset.end);
+            if(nowMin >= subStart && nowMin < subEnd) sub.classList.add("current");
+        });
+
+        if(nowMin >= cellMin && nowMin < cellEnd) {
+            const line = document.createElement("div");
+            line.className = "current-line";
+            line.style.top = ((nowMin - cellMin)/interval*100) + "%";
+            cell.appendChild(line);
+        }
+    });
+}
+
+setInterval(highlightCurrent, 1000);
+highlightCurrent();
+
+window.addEventListener("DOMContentLoaded", () => loadTimetable());
+</script>
+
+
+
+
+{% endblock %}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Dashboard{% endblock %}</title>
+
+<style>
+:root {
+    --bg-color: #ffffff;
+    --text-color: #1a1a1a;
+    --header-bg: #0a58ca;
+    --header-text: #ffffff;
+    --sidebar-bg: #f4f4f4;
+    --sidebar-text: #333333;
+    --sidebar-hover: #e0e0e0;
+    --accent-color: #0a58ca;
+}
+[data-theme="dark"] {
+    --bg-color: #121212;
+    --text-color: #f0f0f0;
+    --header-bg: #003366;
+    --header-text: #ffffff;
+    --sidebar-bg: #1f1f1f;
+    --sidebar-text: #ffffff;
+    --sidebar-hover: #333333;
+    --accent-color: #3399ff;
+}
+body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+}
+.sidebar {
+    width: 220px;
+    background: var(--sidebar-bg);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding-top: 60px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+.sidebar.collapsed { transform: translateX(-220px); }
+.sidebar a { display: block; padding: 12px 20px; color: var(--sidebar-text); text-decoration: none; font-weight: 500; }
+.sidebar a:hover { background: var(--sidebar-hover); }
+.sidebar a.active { background: var(--accent-color); color: #fff; font-weight: 600; }
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--header-bg);
+    color: var(--header-text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+}
+header .profile { display: flex; align-items: center; gap: 10px; }
+header .profile img { width: 32px; height: 32px; border-radius: 50%; }
+button { cursor: pointer; border: none; border-radius: 4px; padding: 4px 10px; font-family: "Segoe UI", sans-serif; }
+#theme-toggle { background: var(--accent-color); color: #fff; }
+#sidebar-btn { background: none; font-size: 24px; color: var(--header-text); padding: 0; }
+main { margin-left: 220px; margin-top: 60px; padding: 20px; flex-grow: 1; transition: margin-left 0.3s ease; }
+main.fullwidth { margin-left: 0; }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body data-theme="light">
+
+<nav class="sidebar" id="sidebar">
+    <a href="{{ url_for('home') }}" class="{% if request.endpoint == 'home' %}active{% endif %}">Home</a>
+    <a href="{{ url_for('profile') }}" class="{% if request.endpoint == 'profile' %}active{% endif %}">Profile</a>
+    <a href="{{ url_for('timetable_dashboard') }}" class="{% if request.endpoint == 'timetable_dashboard' %}active{% endif %}">Timetable</a>
+    <a href="{{ url_for('settings') }}" class="{% if request.endpoint == 'settings' %}active{% endif %}">Settings</a>
+</nav>
+
+<header>
+    <button id="sidebar-btn">☰</button>
+    <div>School Organizer</div>
+    <div class="profile">
+        <span id="user-name">Loading...</span>
+        <img src="{{ url_for('static', filename='img/profile.png') }}" alt="Profile">
+        <button id="theme-toggle">🌙</button>
+    </div>
+</header>
+
+<main id="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    document.getElementById('sidebar-btn').addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('fullwidth');
+    });
+
+    const themeBtn = document.getElementById('theme-toggle');
+    themeBtn.addEventListener('click', () => {
+        const current = document.body.dataset.theme;
+        const newTheme = current === 'light' ? 'dark' : 'light';
+        document.body.dataset.theme = newTheme;
+        localStorage.setItem('theme', newTheme);
+    });
+
+    const savedTheme = localStorage.getItem('theme');
+    document.body.dataset.theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    const API_BASE = "{{ api_base }}";
+    async function loadUser(userId={{ uuid }}) {
+        try {
+            const res = await fetch(`${API_BASE}/users/${userId}`);
+            if (!res.ok) throw new Error();
+            const user = await res.json();
+            document.getElementById('user-name').textContent = `${user.firstname} ${user.lastname}`;
+        } catch {
+            document.getElementById('user-name').textContent = 'Fehler';
+        }
+    }
+    loadUser();
+});
+</script>
+
+</body>
+</html>
